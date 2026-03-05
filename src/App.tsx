@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { UIMessage } from "ai"
 
@@ -21,12 +21,50 @@ import { Textarea } from "./components/ui/textarea"
 import { OllamaChatTransport } from "./lib/ollama-chat-transport"
 import { MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
 
+const STORAGE_KEY = "local-chat-conversation"
+
 function getTextFromMessage(message: UIMessage): string {
   return message.parts
     .filter((part) => part.type === "text")
     .map((part) => part.text)
     .join("")
     .trim()
+}
+
+function loadStoredMessages(): UIMessage[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (m): m is UIMessage =>
+        m != null &&
+        typeof m === "object" &&
+        typeof (m as UIMessage).id === "string" &&
+        ((m as UIMessage).role === "user" || (m as UIMessage).role === "assistant" || (m as UIMessage).role === "system") &&
+        Array.isArray((m as UIMessage).parts) &&
+        (m as UIMessage).parts.every(
+          (p: unknown) =>
+            p != null &&
+            typeof p === "object" &&
+            (p as { type: string }).type === "text" &&
+            typeof (p as { text: string }).text === "string"
+        )
+    ) as UIMessage[]
+  } catch {
+    return []
+  }
+}
+
+function saveMessages(messages: UIMessage[]) {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+  } catch {
+    // ignore quota / privacy errors
+  }
 }
 
 type Theme = "light" | "dark"
@@ -50,12 +88,28 @@ function App() {
   const [copiedSetup, setCopiedSetup] = useState(false)
   const ollamaModel = "llama3.2"
   const transport = useMemo(() => new OllamaChatTransport(ollamaModel), [ollamaModel])
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat({
+  const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport,
   })
   const ollamaSetupCommands = `ollama serve\nollama pull ${ollamaModel} # or other ollama models`
+  const hasLoadedFromStorage = useRef(false)
 
   const isStreaming = status === "streaming" || status === "submitted"
+
+  // Load conversation from localStorage on mount
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) return
+    hasLoadedFromStorage.current = true
+    const stored = loadStoredMessages()
+    if (stored.length > 0) {
+      setMessages(stored)
+    }
+  }, [setMessages])
+
+  // Persist conversation whenever messages change
+  useEffect(() => {
+    saveMessages(messages)
+  }, [messages])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")
@@ -81,6 +135,7 @@ function App() {
 
     setInput("")
     setMessages([])
+    clearError()
   }
 
   const handleCopySetupCommands = async () => {
@@ -101,7 +156,7 @@ function App() {
             <div className="space-y-2">
               <CardTitle>Local Chat</CardTitle>
               <CardDescription>
-                Frontend chat powered by AI SDK v6 hook + local Ollama model.
+                Frontend chat powered by <a href="https://ai-sdk.dev/" className="text-primary hover:underline" target="_blank">AI SDK v6</a> and <a href="https://ollama.com" className="text-primary hover:underline" target="_blank">Ollama</a>
               </CardDescription>
               <div className="bg-muted/40 text-muted-foreground space-y-2 rounded-md border px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
