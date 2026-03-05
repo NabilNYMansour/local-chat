@@ -12,6 +12,7 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.118",
     "@tailwindcss/vite": "^4.2.1",
+    "@vercel/analytics": "^1.6.1",
     "ai": "^6.0.116",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

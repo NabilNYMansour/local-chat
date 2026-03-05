@@ -91,7 +91,13 @@ function App() {
   const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport,
   })
-  const ollamaSetupCommands = `ollama serve\nollama pull ${ollamaModel} # or other ollama models`
+  const ollamaAllowedOrigins =
+    typeof window !== "undefined"
+      ? [window.location.origin, "http://localhost:5173"].filter(
+          (o, i, a) => a.indexOf(o) === i
+        ).join(",")
+      : "http://localhost:5173,https://local-chat-eight.vercel.app"
+  const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}"\nollama serve\nollama pull ${ollamaModel} # or other ollama models`
   const hasLoadedFromStorage = useRef(false)
 
   const isStreaming = status === "streaming" || status === "submitted"
@@ -171,15 +177,22 @@ function App() {
                     {copiedSetup ? "Copied" : "Copy"}
                   </Button>
                 </div>
-                <pre className="bg-background overflow-x-auto rounded border p-2 text-[11px] leading-relaxed">
-                  <code>
-                    <span className="text-emerald-400">ollama</span>
-                    <span className="text-sky-300"> serve</span>
-                    {"\n"}
-                    <span className="text-emerald-400">ollama</span>
-                    <span className="text-sky-300"> pull</span>
-                    <span className="text-violet-300"> {ollamaModel}</span>
-                    <span className="text-muted-foreground"> # or other ollama models</span>
+                <pre className="bg-background overflow-x-auto rounded border p-2.5 text-[11px] leading-relaxed">
+                  <code className="block space-y-0.5">
+                    <span className="block">
+                      <span className="text-amber-300">OLLAMA_ORIGINS=</span>
+                      <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
+                    </span>
+                    <span className="block">
+                      <span className="text-emerald-400">ollama</span>
+                      <span className="text-sky-300"> serve</span>
+                    </span>
+                    <span className="block">
+                      <span className="text-emerald-400">ollama</span>
+                      <span className="text-sky-300"> pull</span>
+                      <span className="text-violet-300"> {ollamaModel}</span>
+                      <span className="text-muted-foreground"> # or other ollama models</span>
+                    </span>
                   </code>
                 </pre>
                 <p className="mt-1">
