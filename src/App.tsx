@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { UIMessage } from "ai"
 
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from "./components/ai-elements/conversation"
 import { Button } from "./components/ui/button"
 import {
   Card,
@@ -13,6 +19,7 @@ import {
 } from "./components/ui/card"
 import { Textarea } from "./components/ui/textarea"
 import { OllamaChatTransport } from "./lib/ollama-chat-transport"
+import { MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
 
 function getTextFromMessage(message: UIMessage): string {
   return message.parts
@@ -132,45 +139,56 @@ function App() {
               onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? "Light" : "Dark"}
+              {theme === "dark" ? (
+                <>
+                  <SunIcon className="size-4" />
+                  Light
+                </>
+              ) : (
+                <>
+                  <MoonIcon className="size-4" />
+                  Dark
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <div className="flex h-full flex-col gap-4 overflow-y-auto px-4 py-4">
-            {messages.length === 0 && (
-              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-                <p>No messages yet</p>
-              </div>
-            )}
-            {messages.map((message) => {
-              const text = getTextFromMessage(message)
+        <CardContent className="flex-1 flex min-h-0 flex-col p-0">
+          <Conversation className="min-h-0">
+            <ConversationContent className="gap-4 px-4 py-4">
+              {messages.length === 0 ? (
+                <ConversationEmptyState description="" />
+              ) : null}
+              {messages.map((message) => {
+                const text = getTextFromMessage(message)
 
-              if (!text) {
-                return null
-              }
+                if (!text) {
+                  return null
+                }
 
-              const isUser = message.role === "user"
+                const isUser = message.role === "user"
 
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                >
+                return (
                   <div
-                    className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${
-                      isUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    }`}
+                    key={message.id}
+                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
-                    {text}
+                    <div
+                      className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${
+                        isUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      }`}
+                    >
+                      {text}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
         </CardContent>
 
         <CardFooter className="border-t py-4">
@@ -199,10 +217,12 @@ function App() {
                   onClick={handleResetConversation}
                   disabled={messages.length === 0 && !input.trim()}
                 >
+                  <RotateCcwIcon className="size-4" />
                   Reset
                 </Button>
                 {isStreaming ? (
                   <Button type="button" variant="secondary" onClick={stop}>
+                    <SquareIcon className="size-4" />
                     Stop
                   </Button>
                 ) : (
