@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { UIMessage } from "ai"
-import { SendHorizontal, Square } from "lucide-react"
+import { Moon, SendHorizontal, Square, Sun } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 import {
@@ -36,8 +36,24 @@ const starterMessages: UIMessage[] = [
   },
 ]
 
+type Theme = "light" | "dark"
+
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") {
+    return "dark"
+  }
+
+  const storedTheme = window.localStorage.getItem("theme")
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme
+  }
+
+  return "dark"
+}
+
 function App() {
   const [input, setInput] = useState("")
+  const [theme, setTheme] = useState<Theme>(getInitialTheme)
   const transport = useMemo(() => new MockChatTransport(), [])
   const { messages, sendMessage, status, stop, error } = useChat({
     transport,
@@ -45,6 +61,11 @@ function App() {
   })
 
   const isStreaming = status === "streaming" || status === "submitted"
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark")
+    window.localStorage.setItem("theme", theme)
+  }, [theme])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -62,10 +83,27 @@ function App() {
     <main className="bg-muted/30 flex min-h-svh items-center justify-center p-4 md:p-8">
       <Card className="h-[80svh] w-full max-w-3xl gap-0 py-0">
         <CardHeader className="border-b py-4">
-          <CardTitle>Local Chat</CardTitle>
-          <CardDescription>
-            Frontend-only chat powered by AI SDK v6 hook + mock transport.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle>Local Chat</CardTitle>
+              <CardDescription>
+                Frontend-only chat powered by AI SDK v6 hook + mock transport.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? (
+                <Sun className="size-4" />
+              ) : (
+                <Moon className="size-4" />
+              )}
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-hidden p-0">
