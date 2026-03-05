@@ -19,7 +19,7 @@ import {
 } from "./components/ui/card"
 import { Textarea } from "./components/ui/textarea"
 import { OllamaChatTransport } from "./lib/ollama-chat-transport"
-import { MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
+import { Github, MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
 
 const STORAGE_KEY = "local-chat-conversation"
 
@@ -93,10 +93,10 @@ function App() {
   })
   const ollamaAllowedOrigins =
     typeof window !== "undefined"
-      ? [window.location.origin, "http://localhost:5173"].filter(
-          (o, i, a) => a.indexOf(o) === i
-        ).join(",")
-      : "http://localhost:5173,https://local-chat-eight.vercel.app"
+      ? window.location.hostname === "localhost"
+        ? "http://localhost:5173"
+        : window.location.origin
+      : "http://localhost:5173"
   const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}"\nollama serve\nollama pull ${ollamaModel} # or other ollama models`
   const hasLoadedFromStorage = useRef(false)
 
@@ -201,24 +201,30 @@ function App() {
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" asChild aria-label="GitHub repository">
+                <a
+                  href="https://github.com/NabilNYMansour/local-chat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="size-4" />
+                </a>
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
                   <SunIcon className="size-4" />
-                  Light
-                </>
-              ) : (
-                <>
+                ) : (
                   <MoonIcon className="size-4" />
-                  Dark
-                </>
-              )}
-            </Button>
+                )}
+              </Button>
+            </div>
           </div>
         </CardHeader>
 
@@ -243,11 +249,10 @@ function App() {
                     className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${
-                        isUser
+                      className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${isUser
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground"
-                      }`}
+                        }`}
                     >
                       {text}
                     </div>
