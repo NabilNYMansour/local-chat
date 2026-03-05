@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { UIMessage } from "ai"
-import { Moon, SendHorizontal, Square, Sun } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 import {
@@ -13,7 +12,7 @@ import {
   CardTitle,
 } from "./components/ui/card"
 import { Textarea } from "./components/ui/textarea"
-import { MockChatTransport } from "./lib/mock-chat-transport"
+import { OllamaChatTransport } from "./lib/ollama-chat-transport"
 
 function getTextFromMessage(message: UIMessage): string {
   return message.parts
@@ -22,19 +21,6 @@ function getTextFromMessage(message: UIMessage): string {
     .join("")
     .trim()
 }
-
-const starterMessages: UIMessage[] = [
-  {
-    id: "starter-assistant-message",
-    role: "assistant",
-    parts: [
-      {
-        type: "text",
-        text: "Chat UI is ready. This is frontend-only with a mock AI transport for now.",
-      },
-    ],
-  },
-]
 
 type Theme = "light" | "dark"
 
@@ -54,11 +40,13 @@ function getInitialTheme(): Theme {
 function App() {
   const [input, setInput] = useState("")
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
-  const transport = useMemo(() => new MockChatTransport(), [])
-  const { messages, sendMessage, status, stop, error } = useChat({
+  const [copiedSetup, setCopiedSetup] = useState(false)
+  const ollamaModel = "llama3.2"
+  const transport = useMemo(() => new OllamaChatTransport(ollamaModel), [ollamaModel])
+  const { messages, sendMessage, setMessages, status, stop, error } = useChat({
     transport,
-    messages: starterMessages,
   })
+  const ollamaSetupCommands = `ollama serve\nollama pull ${ollamaModel} # or other ollama models`
 
   const isStreaming = status === "streaming" || status === "submitted"
 
@@ -79,35 +67,83 @@ function App() {
     await sendMessage({ text: trimmedInput })
   }
 
+  const handleResetConversation = () => {
+    if (isStreaming) {
+      stop()
+    }
+
+    setInput("")
+    setMessages([])
+  }
+
+  const handleCopySetupCommands = async () => {
+    try {
+      await navigator.clipboard.writeText(ollamaSetupCommands)
+      setCopiedSetup(true)
+      window.setTimeout(() => setCopiedSetup(false), 1500)
+    } catch {
+      setCopiedSetup(false)
+    }
+  }
+
   return (
-    <main className="bg-muted/30 flex min-h-svh items-center justify-center p-4 md:p-8">
-      <Card className="h-[80svh] w-full max-w-3xl gap-0 py-0">
+    <main className="bg-background flex min-h-svh items-center justify-center p-4">
+      <Card className="flex h-[82svh] w-full max-w-3xl flex-col gap-0 py-0">
         <CardHeader className="border-b py-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <CardTitle>Local Chat</CardTitle>
               <CardDescription>
-                Frontend-only chat powered by AI SDK v6 hook + mock transport.
+                Frontend chat powered by AI SDK v6 hook + local Ollama model.
               </CardDescription>
+              <div className="bg-muted/40 text-muted-foreground space-y-2 rounded-md border px-3 py-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <p>Ollama setup</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => void handleCopySetupCommands()}
+                  >
+                    {copiedSetup ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+                <pre className="bg-background overflow-x-auto rounded border p-2 text-[11px] leading-relaxed">
+                  <code>
+                    <span className="text-emerald-400">ollama</span>
+                    <span className="text-sky-300"> serve</span>
+                    {"\n"}
+                    <span className="text-emerald-400">ollama</span>
+                    <span className="text-sky-300"> pull</span>
+                    <span className="text-violet-300"> {ollamaModel}</span>
+                    <span className="text-muted-foreground"> # or other ollama models</span>
+                  </code>
+                </pre>
+                <p className="mt-1">
+                  <span className="font-mono">address already in use</span> means Ollama is already
+                  running on <span className="font-mono">127.0.0.1:11434</span>.
+                </p>
+              </div>
             </div>
             <Button
               type="button"
               variant="outline"
-              size="icon"
               onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              aria-label="Toggle theme"
             >
-              {theme === "dark" ? (
-                <Sun className="size-4" />
-              ) : (
-                <Moon className="size-4" />
-              )}
+              {theme === "dark" ? "Light" : "Dark"}
             </Button>
           </div>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-hidden p-0">
-          <div className="flex h-full flex-col gap-4 overflow-y-auto px-6 py-5">
+          <div className="flex h-full flex-col gap-4 overflow-y-auto px-4 py-4">
+            {messages.length === 0 && (
+              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                <p>No messages yet</p>
+              </div>
+            )}
             {messages.map((message) => {
               const text = getTextFromMessage(message)
 
@@ -123,10 +159,10 @@ function App() {
                   className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${
+                    className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${
                       isUser
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted text-foreground rounded-bl-sm"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {text}
@@ -156,17 +192,25 @@ function App() {
               <p className="text-muted-foreground text-xs">
                 Enter to send, Shift+Enter for newline.
               </p>
-              {isStreaming ? (
-                <Button type="button" variant="secondary" onClick={stop}>
-                  <Square className="size-4" />
-                  Stop
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetConversation}
+                  disabled={messages.length === 0 && !input.trim()}
+                >
+                  Reset
                 </Button>
-              ) : (
-                <Button type="submit" disabled={!input.trim()}>
-                  <SendHorizontal className="size-4" />
-                  Send
-                </Button>
-              )}
+                {isStreaming ? (
+                  <Button type="button" variant="secondary" onClick={stop}>
+                    Stop
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={!input.trim()}>
+                    Send
+                  </Button>
+                )}
+              </div>
             </div>
             {error ? (
               <p className="text-destructive text-xs">{error.message}</p>
