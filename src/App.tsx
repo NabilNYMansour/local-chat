@@ -19,7 +19,7 @@ import {
 } from "./components/ui/card"
 import { Textarea } from "./components/ui/textarea"
 import { OllamaChatTransport } from "./lib/ollama-chat-transport"
-import { Github, MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
+import { Check, Copy, Github, MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
 
 const STORAGE_KEY = "local-chat-conversation"
 
@@ -85,7 +85,7 @@ function getInitialTheme(): Theme {
 function App() {
   const [input, setInput] = useState("")
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
-  const [copiedSetup, setCopiedSetup] = useState(false)
+  const [copiedBlock, setCopiedBlock] = useState<"setup" | "killall" | "404" | null>(null)
   const ollamaModel = "llama3.2"
   const transport = useMemo(() => new OllamaChatTransport(ollamaModel), [ollamaModel])
   const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
@@ -97,7 +97,7 @@ function App() {
         ? "http://localhost:5173"
         : window.location.origin
       : "http://localhost:5173"
-  const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}" ollama serve\nollama pull ${ollamaModel} # or other ollama models`
+  const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}" ollama serve\nollama pull ${ollamaModel}  # or other ollama models`
   const hasLoadedFromStorage = useRef(false)
 
   const isStreaming = status === "streaming" || status === "submitted"
@@ -144,13 +144,13 @@ function App() {
     clearError()
   }
 
-  const handleCopySetupCommands = async () => {
+  const handleCopyCode = async (text: string, block: "setup" | "killall" | "404") => {
     try {
-      await navigator.clipboard.writeText(ollamaSetupCommands)
-      setCopiedSetup(true)
-      window.setTimeout(() => setCopiedSetup(false), 1500)
+      await navigator.clipboard.writeText(text)
+      setCopiedBlock(block)
+      window.setTimeout(() => setCopiedBlock(null), 1500)
     } catch {
-      setCopiedSetup(false)
+      setCopiedBlock(null)
     }
   }
 
@@ -164,41 +164,90 @@ function App() {
               <CardDescription>
                 Frontend chat powered by <a href="https://ai-sdk.dev/" className="text-primary hover:underline" target="_blank">AI SDK v6</a> and <a href="https://ollama.com" className="text-primary hover:underline" target="_blank">Ollama</a>
               </CardDescription>
-              <div className="bg-muted/40 text-muted-foreground space-y-2 rounded-md border px-3 py-2 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <p>Ollama setup</p>
+              <div className="bg-muted/40 text-muted-foreground space-y-3 rounded-md border px-3 py-2 text-xs">
+                <p className="mb-0.5">Setup commands</p>
+                <div className="relative">
+                  <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                    <code className="block space-y-0.5">
+                      <span className="block">
+                        <span className="text-amber-300">OLLAMA_ORIGINS=</span>
+                        <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
+                        <span className="text-sky-300"> </span>
+                        <span className="text-emerald-400">ollama</span>
+                        <span className="text-sky-300"> serve</span>
+                      </span>
+                    </code>
+                  </pre>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => void handleCopySetupCommands()}
+                    size="icon"
+                    className="absolute right-1 top-1 h-6 w-6"
+                    onClick={() => void handleCopyCode(ollamaSetupCommands, "setup")}
+                    aria-label="Copy setup commands"
                   >
-                    {copiedSetup ? "Copied" : "Copy"}
+                    {copiedBlock === "setup" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
                   </Button>
                 </div>
-                <pre className="bg-background overflow-x-auto rounded border p-2.5 text-[11px] leading-relaxed">
-                  <code className="block space-y-0.5">
-                    <span className="block">
-                      <span className="text-amber-300">OLLAMA_ORIGINS=</span>
-                      <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
-                      <span className="text-sky-300"> </span>
-                      <span className="text-emerald-400">ollama</span>
-                      <span className="text-sky-300"> serve</span>
-                    </span>
-                    <span className="block">
-                      <span className="text-emerald-400">ollama</span>
-                      <span className="text-sky-300"> pull</span>
-                      <span className="text-violet-300"> {ollamaModel}</span>
-                      <span className="text-muted-foreground"> # or other ollama models</span>
-                    </span>
-                  </code>
-                </pre>
-                <p className="mt-1">
-                  <span className="font-mono">address already in use</span> means Ollama is already
-                  running on <span className="font-mono">127.0.0.1:11434</span>. If you get 404 from
-                  the app, run <span className="font-mono">ollama pull {ollamaModel}</span> first.
-                </p>
+                <div className="space-y-2">
+                  <div>
+                    <p className="mb-0.5">Port in use?</p>
+                    <div className="relative">
+                      <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                        <code className="block">
+                          <span className="text-sky-300">killall</span>
+                          <span className="text-sky-300"> </span>
+                          <span className="text-emerald-400">ollama</span>
+                        </code>
+                      </pre>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-6 w-6"
+                        onClick={() => void handleCopyCode("killall ollama", "killall")}
+                        aria-label="Copy killall command"
+                      >
+                        {copiedBlock === "killall" ? (
+                          <Check className="size-3.5" />
+                        ) : (
+                          <Copy className="size-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-0.5">Getting 404?</p>
+                    <div className="relative">
+                      <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                        <code className="block">
+                          <span className="text-emerald-400">ollama</span>
+                          <span className="text-sky-300"> pull</span>
+                          <span className="text-violet-300"> {ollamaModel}</span>
+                          <span className="text-muted-foreground">  # or other ollama models</span>
+                        </code>
+                      </pre>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-6 w-6"
+                        onClick={() => void handleCopyCode(`ollama pull ${ollamaModel}  # or other ollama models`, "404")}
+                        aria-label="Copy ollama pull command"
+                      >
+                        {copiedBlock === "404" ? (
+                          <Check className="size-3.5" />
+                        ) : (
+                          <Copy className="size-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -250,8 +299,8 @@ function App() {
                   >
                     <div
                       className={`max-w-[85%] rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${isUser
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                         }`}
                     >
                       {text}
