@@ -54,8 +54,19 @@ export class OllamaChatTransport implements ChatTransport<UIMessage> {
       }),
     })
 
-    if (!response.ok || !response.body) {
-      throw new Error(`Ollama request failed: ${response.status}`)
+    if (!response.ok) {
+      const body = await response.text()
+      let message = `Ollama request failed: ${response.status}`
+      try {
+        const json = JSON.parse(body) as { error?: string }
+        if (json.error) message = json.error
+      } catch {
+        if (body) message = body
+      }
+      throw new Error(message)
+    }
+    if (!response.body) {
+      throw new Error("Ollama returned no response body")
     }
 
     const reader = response.body.getReader()

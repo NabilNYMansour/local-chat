@@ -197,7 +197,8 @@ function App() {
                 </pre>
                 <p className="mt-1">
                   <span className="font-mono">address already in use</span> means Ollama is already
-                  running on <span className="font-mono">127.0.0.1:11434</span>.
+                  running on <span className="font-mono">127.0.0.1:11434</span>. If you get 404 from
+                  the app, run <span className="font-mono">ollama pull {ollamaModel}</span> first.
                 </p>
               </div>
             </div>
