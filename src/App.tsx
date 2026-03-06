@@ -97,7 +97,7 @@ function App() {
         ? "http://localhost:5173"
         : window.location.origin
       : "http://localhost:5173"
-  const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}"\nollama serve\nollama pull ${ollamaModel} # or other ollama models`
+  const ollamaSetupCommands = `OLLAMA_ORIGINS="${ollamaAllowedOrigins}" ollama serve\nollama pull ${ollamaModel} # or other ollama models`
   const hasLoadedFromStorage = useRef(false)
 
   const isStreaming = status === "streaming" || status === "submitted"
@@ -182,8 +182,7 @@ function App() {
                     <span className="block">
                       <span className="text-amber-300">OLLAMA_ORIGINS=</span>
                       <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
-                    </span>
-                    <span className="block">
+                      <span className="text-sky-300"> </span>
                       <span className="text-emerald-400">ollama</span>
                       <span className="text-sky-300"> serve</span>
                     </span>
