@@ -19,7 +19,12 @@ import {
 } from "./components/ui/card"
 import { Textarea } from "./components/ui/textarea"
 import { OllamaChatTransport } from "./lib/ollama-chat-transport"
-import { Check, Copy, Github, MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./components/ui/collapsible"
+import { Check, ChevronDownIcon, Copy, Github, MoonIcon, RotateCcwIcon, SquareIcon, SunIcon } from "lucide-react"
 
 const STORAGE_KEY = "local-chat-conversation"
 
@@ -156,98 +161,111 @@ function App() {
 
   return (
     <main className="bg-background flex min-h-svh items-center justify-center p-4">
-      <Card className="flex h-[82svh] w-full max-w-3xl flex-col gap-0 py-0">
-        <CardHeader className="border-b py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2">
+      <Card className="flex h-[82svh] w-full max-w-3xl flex-col gap-0 py-0 w-full">
+        <CardHeader className="border-b py-4 w-full">
+          <div className="flex items-start justify-between gap-3 w-full">
+            <div className="space-y-2 w-full">
               <CardTitle>Local Chat</CardTitle>
               <CardDescription>
                 Frontend chat powered by <a href="https://ai-sdk.dev/" className="text-primary hover:underline" target="_blank">AI SDK v6</a> and <a href="https://ollama.com" className="text-primary hover:underline" target="_blank">Ollama</a>
               </CardDescription>
-              <div className="bg-muted/40 text-muted-foreground space-y-3 rounded-md border px-3 py-2 text-xs">
-                <p className="mb-0.5">Setup commands</p>
-                <div className="relative">
-                  <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
-                    <code className="block space-y-0.5">
-                      <span className="block">
-                        <span className="text-amber-300">OLLAMA_ORIGINS=</span>
-                        <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
-                        <span className="text-sky-300"> </span>
-                        <span className="text-emerald-400">ollama</span>
-                        <span className="text-sky-300"> serve</span>
-                      </span>
-                    </code>
-                  </pre>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1 h-6 w-6"
-                    onClick={() => void handleCopyCode(ollamaSetupCommands, "setup")}
-                    aria-label="Copy setup commands"
-                  >
-                    {copiedBlock === "setup" ? (
-                      <Check className="size-3.5" />
-                    ) : (
-                      <Copy className="size-3.5" />
-                    )}
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <p className="mb-0.5">Port in use?</p>
-                    <div className="relative">
-                      <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
-                        <code className="block">
-                          <span className="text-sky-300">killall</span>
-                          <span className="text-sky-300"> </span>
-                          <span className="text-emerald-400">ollama</span>
-                        </code>
-                      </pre>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1 h-6 w-6"
-                        onClick={() => void handleCopyCode("killall ollama", "killall")}
-                        aria-label="Copy killall command"
-                      >
-                        {copiedBlock === "killall" ? (
-                          <Check className="size-3.5" />
-                        ) : (
-                          <Copy className="size-3.5" />
-                        )}
-                      </Button>
+              <div className="w-full">
+                <Collapsible defaultOpen className="bg-muted/40 text-muted-foreground space-y-3 rounded-md border px-3 py-2 text-xs">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="group mb-0.5 flex w-full items-center justify-between gap-2 text-sm text-primary"
+                    >
+                      Setup commands
+                      <ChevronDownIcon className="size-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pt-4">
+                    <div className="space-y-2">
+                      <p className="mb-0.5">Start Ollama server with correct origins</p>
+                      <div className="relative">
+                        <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                          <code className="block space-y-0.5">
+                            <span className="block">
+                              <span className="text-amber-300">OLLAMA_ORIGINS=</span>
+                              <span className="text-violet-300">"{ollamaAllowedOrigins}"</span>
+                              <span className="text-sky-300"> </span>
+                              <span className="text-emerald-400">ollama</span>
+                              <span className="text-sky-300"> serve</span>
+                            </span>
+                          </code>
+                        </pre>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1 h-6 w-6"
+                          onClick={() => void handleCopyCode(ollamaSetupCommands, "setup")}
+                          aria-label="Copy setup commands"
+                        >
+                          {copiedBlock === "setup" ? (
+                            <Check className="size-3.5" />
+                          ) : (
+                            <Copy className="size-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                      <div>
+                        <p className="mb-0.5">Port in use?</p>
+                        <div className="relative">
+                          <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                            <code className="block">
+                              <span className="text-sky-300">killall</span>
+                              <span className="text-sky-300"> </span>
+                              <span className="text-emerald-400">ollama</span>
+                            </code>
+                          </pre>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 h-6 w-6"
+                            onClick={() => void handleCopyCode("killall ollama", "killall")}
+                            aria-label="Copy killall command"
+                          >
+                            {copiedBlock === "killall" ? (
+                              <Check className="size-3.5" />
+                            ) : (
+                              <Copy className="size-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-0.5">Getting 404?</p>
+                        <div className="relative">
+                          <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
+                            <code className="block">
+                              <span className="text-emerald-400">ollama</span>
+                              <span className="text-sky-300"> pull</span>
+                              <span className="text-violet-300"> {ollamaModel}</span>
+                              <span className="text-muted-foreground">  # or other ollama models</span>
+                            </code>
+                          </pre>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 h-6 w-6"
+                            onClick={() => void handleCopyCode(`ollama pull ${ollamaModel}  # or other ollama models`, "404")}
+                            aria-label="Copy ollama pull command"
+                          >
+                            {copiedBlock === "404" ? (
+                              <Check className="size-3.5" />
+                            ) : (
+                              <Copy className="size-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <p className="mb-0.5">Getting 404?</p>
-                    <div className="relative">
-                      <pre className="bg-background overflow-x-auto rounded border p-2.5 pr-9 text-[11px] leading-relaxed">
-                        <code className="block">
-                          <span className="text-emerald-400">ollama</span>
-                          <span className="text-sky-300"> pull</span>
-                          <span className="text-violet-300"> {ollamaModel}</span>
-                          <span className="text-muted-foreground">  # or other ollama models</span>
-                        </code>
-                      </pre>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1 h-6 w-6"
-                        onClick={() => void handleCopyCode(`ollama pull ${ollamaModel}  # or other ollama models`, "404")}
-                        aria-label="Copy ollama pull command"
-                      >
-                        {copiedBlock === "404" ? (
-                          <Check className="size-3.5" />
-                        ) : (
-                          <Copy className="size-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
             <div className="flex items-center gap-2">
